@@ -1,0 +1,8 @@
+<library path="lib/libhiro_panda_ik_controllers">
+  <class name="hiro_panda_ik/PandaPoseController" type="hiro_panda::PandaPoseController" base_class_type="controller_interface::ControllerBase">
+    <description>
+      A controller that implements TRACIK to calculate the desired joint position of the Panda from Cartesian Pose, 
+      and smoothly moves from one joint configuration to another via four options.
+    </description>
+  </class>
+</library>
