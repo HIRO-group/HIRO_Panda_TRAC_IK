@@ -27,11 +27,6 @@ bool PandaPoseController::init(hardware_interface::RobotHW *hw, ros::NodeHandle 
     int traj_method_int = 1;
     nh.getParam("/hiro_panda/trajectory_method", traj_method_int);
     traj_method = (TrajectoryMethod) traj_method_int;
-    // limiting acceleration
-    for (int i = 0; i < _lower_max_acceleration.size(); i++)
-    {
-        _lower_max_acceleration[i] = franka::kMaxJointAcceleration[i] * 0.1;
-    }
 
     std::string arm_id;
     if (!nh.getParam("arm_id", arm_id))

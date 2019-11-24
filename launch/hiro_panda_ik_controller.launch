@@ -3,7 +3,6 @@
   <arg name="robot_ip" />
   <arg name="trajectory_method" default="1" />
   <arg name="load_gripper" default="true" />
-  <arg name="acceleration_scale" default="0.1" />
   <include file="$(find franka_control)/launch/franka_control.launch" >
     <arg name="robot_ip" value="$(arg robot_ip)" />
     <arg name="load_gripper" value="$(arg load_gripper)" />

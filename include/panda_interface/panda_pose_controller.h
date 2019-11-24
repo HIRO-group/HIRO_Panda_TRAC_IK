@@ -8,7 +8,6 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <ros/node_handle.h>
 #include <ros/time.h>
-#include <franka/rate_limiting.h>
 #include <geometry_msgs/Pose.h>
 
 #include "panda_utils/panda_trac_ik.h"
@@ -42,7 +41,6 @@ private:
     std::array<double, 7> _limited_joint_cmds;
     std::array<double, 7> _last_commanded_pos;
 
-    std::array<double, 7> _lower_max_acceleration;
     // 7 by 4 matrix for coefficients for each franka panda joint
     std::array<std::array<double, 4>, 7> _vel_catmull_coeffs_first_spline;
     std::array<std::array<double, 4>, 7> _vel_catmull_coeffs_second_spline;
