@@ -4,7 +4,6 @@
 
 #include <controller_interface/multi_interface_controller.h>
 #include <franka_hw/franka_cartesian_command_interface.h>
-#include <franka_hw/franka_state_interface.h>
 #include <hardware_interface/robot_hw.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <ros/node_handle.h>
@@ -21,6 +20,7 @@ class PandaPoseController : public controller_interface::MultiInterfaceControlle
                                 franka_hw::FrankaStateInterface>
 {
 public:
+    // required functions for panda fci 
     bool init(hardware_interface::RobotHW *hw, ros::NodeHandle &nh) override;
     void update(const ros::Time &time, const ros::Duration &period) override;
     void starting(const ros::Time &time) override;
@@ -30,9 +30,6 @@ private:
     // hardware_interface and corresponding joint handles
     hardware_interface::PositionJointInterface *_position_joint_interface;
     std::vector<hardware_interface::JointHandle> _position_joint_handles;
-
-    franka_hw::FrankaStateInterface *_state_interface;
-    std::unique_ptr<franka_hw::FrankaStateHandle> _state_handle;
 
     ros::Duration _elapsed_time;
     ros::Time _start_time;
@@ -47,13 +44,10 @@ private:
 
     std::array<double, 7> _lower_max_acceleration;
     // 7 by 4 matrix for coefficients for each franka panda joint
-    std::array<std::array<double, 4>, 7> _pos_catmull_coeffs;
     std::array<std::array<double, 4>, 7> _vel_catmull_coeffs_first_spline;
     std::array<std::array<double, 4>, 7> _vel_catmull_coeffs_second_spline;
     std::array<double, 7> calc_max_pos_diffs;
 
-    double calc_max_time;
-    double max_vel;
     bool _is_executing_cmd;
     double _max_abs_vel = 2.1;
     // user selected trajectory method after inverse kinematics solver completes
@@ -61,7 +55,6 @@ private:
     {
         ConstantVel = 1,
         TrapezoidVel,
-        CatmullRomPos,
         CatmullRomVel
     };
 
@@ -79,10 +72,6 @@ private:
     void constantVelCmd(const double &min_step);
 
     void trapezoidVelCmd(const double &min_step, const double &v_change);
-
-    void continuousShiftingVelCmd(const double &min_step);
-
-    void catmullRomSplinePosCmd(const double &norm_time);
 
     void catmullRomSplineVelCmd(const double &norm_pos, const int &joint_num, const double &interval);
 

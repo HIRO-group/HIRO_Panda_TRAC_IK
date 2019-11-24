@@ -15,10 +15,7 @@
 #include <memory>
 #include <string>
 
-// class for tracik solver for panda robot
-
-// TRAC_IK::TRAC_IK ik_solver(string base_link, string tip_link, string URDF_param="/robot_description",
-// double timeout_in_secs=0.005, double error=1e-5, TRAC_IK::SolveType type=TRAC_IK::Speed);
+// tracik solver for franka panda
 
 namespace hiro_panda
 {
@@ -36,6 +33,7 @@ private:
     std::shared_ptr<TRAC_IK::TRAC_IK> _panda_trac_ik_solver;
     KDL::Chain _chain;
     std::shared_ptr<KDL::JntArray> _nominal_joint_arr;
+
     // min and max joint positions for each joint, in radians
     // from franka panda docs, since URDF might not be well defined 
     std::array<double, 7> _max_joint_positions {
@@ -49,13 +47,10 @@ private:
 public:
     explicit PandaTracIK();
     ~PandaTracIK();
-    // member that determines if the result of trying tracik 10 times produced successful
-    // result
+    // member that determines if the result of trying tracik 10 times produced successful result
     bool is_valid;
     KDL::JntArray perform_ik(const geometry_msgs::Pose &goto_pose);
 
-    // bool getKDLLimits(KDL::JntArray &ll, KDL::JntArray &ul);
-    // bool setKDLLimits(KDL::JntArray  ll, KDL::JntArray  ul);
 };
 
 } // namespace hiro_panda

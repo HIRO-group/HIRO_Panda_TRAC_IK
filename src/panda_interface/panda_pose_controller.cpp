@@ -19,6 +19,7 @@ namespace hiro_panda
 {
 bool PandaPoseController::init(hardware_interface::RobotHW *hw, ros::NodeHandle &nh)
 {
+    // subscribe to goto pose for geometry msgs pose
     _target_subscriber = nh.subscribe("/hiro_panda/goto_pose", 10, &PandaPoseController::targetCartesianPoseCb, this,
                                       ros::TransportHints().reliable().tcpNoDelay());
 
@@ -39,6 +40,7 @@ bool PandaPoseController::init(hardware_interface::RobotHW *hw, ros::NodeHandle 
         return false;
     }
     
+    // joint names check
     std::vector<std::string> joint_names;
     if (!nh.getParam("joint_names", joint_names))
     {
@@ -53,6 +55,7 @@ bool PandaPoseController::init(hardware_interface::RobotHW *hw, ros::NodeHandle 
         return false;
     }
 
+    // position joints interface and handles check
     _position_joint_interface = hw->get<hardware_interface::PositionJointInterface>();
     if (_position_joint_interface == nullptr)
     {
@@ -76,37 +79,16 @@ bool PandaPoseController::init(hardware_interface::RobotHW *hw, ros::NodeHandle 
         }
     }
 
-    _state_interface = hw->get<franka_hw::FrankaStateInterface>();
-    if (_state_interface == nullptr)
-    {
-        ROS_ERROR("PandaPoseController: Could not get Franka State Interface");
-        return false;
-    }
-
-    try
-    {
-        _state_handle = std::make_unique<franka_hw::FrankaStateHandle>(_state_interface->getHandle(arm_id + "_robot"));
-    }
-    catch (const hardware_interface::HardwareInterfaceException &e)
-    {
-        ROS_ERROR_STREAM("PandaPoseController: Could not get Franka State Interface Handle" << e.what());
-        return false;
-    }
     // hiro panda trac ik service
     _panda_ik_service = hiro_panda::PandaTracIK();
     _is_executing_cmd = false;
-    // max of n seconds for a move for catmull rom spline via position
-    calc_max_time = 11.;
-    // max velocity in rads/s
-    max_vel = _max_abs_vel;
-    // get the ik service once interface checks and everything are good to go
     return true;
-    // get state interface and handle
 }
 
 void PandaPoseController::starting(const ros::Time &time)
 {
     _joints_result.resize(7);
+    // set joint positions to current position, to prevent movement
     for (int i = 0; i < 7; i++)
     {
         _joints_result(i) = _position_joint_handles[i].getPosition();
@@ -144,18 +126,6 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
             }
             break;
 
-        case TrajectoryMethod::CatmullRomPos:
-            {
-                // normalize time
-                // get current time minus this time
-                double time_diff = time.toSec() - _start_time.toSec();
-                // normalize value between 0 and 1 based on max time for a spline move
-                double t_norm = time_diff / calc_max_time;
-                // plug into catmull rom position equation
-                catmullRomSplinePosCmd(t_norm);
-            }
-            break;
-
         case TrajectoryMethod::CatmullRomVel:
             {
                 // best and most recommended method for trajectory computation after
@@ -168,6 +138,7 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
                     current_pos = _position_joint_handles[i].getPosition();
                     // norm position
                     p_val = 2 - (2 * (abs(_joint_cmds[i] - current_pos) / abs(calc_max_pos_diffs[i])));
+                    // if p val is negative, treat it as 0
                     p_val = std::max(p_val, 0.);
                     catmullRomSplineVelCmd(p_val, i, interval_length);
                 }
@@ -180,8 +151,6 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
         _position_joint_handles[i].setCommand(_limited_joint_cmds[i]);
     }
 
-    franka::RobotState robot_state = _state_handle->getRobotState();
-    
     for (int i = 0; i < 7; i++)
     {
         _last_commanded_pos[i] = _position_joint_handles[i].getPosition();
@@ -190,7 +159,7 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
 
 void PandaPoseController::stopping(const ros::Time &time)
 {
-    // not implemented yet, can't send immediate commands for 0 velocity to robot
+    // can't send immediate commands for 0 velocity to robot
 }
 
 void PandaPoseController::targetCartesianPoseCb(const geometry_msgs::Pose &target_pose)
@@ -219,38 +188,33 @@ void PandaPoseController::targetCartesianPoseCb(const geometry_msgs::Pose &targe
         ROS_ERROR("Panda Pose Controller: Wrong Amount of Rows Received From TRACIK");
         return;
     }
-    
-    std::array<double,4> position_points;
+    // for catmull rom spline, break up into two splines
+    // spline 1 - increases to max provided velocity
+    // spline 2 - decreases down to 0 smoothly
     std::array<double,4> velocity_points_first_spline;
     std::array<double,4> velocity_points_second_spline;
-
+    double max_vel;
     for (int i=0; i<7; i++)
     {
-        max_vel = _max_abs_vel;
         // get current position
         double cur_pos = _position_joint_handles[i].getPosition();
         // difference between current position and desired position from ik
         calc_max_pos_diffs[i] = _joints_result(i) - cur_pos;
         // if calc_max_poss_diff is negative, flip sign of max vel
-        max_vel = calc_max_pos_diffs[i] < 0 ? -max_vel : max_vel;
+        max_vel = calc_max_pos_diffs[i] < 0 ? -_max_abs_vel : _max_abs_vel;
         int sign = calc_max_pos_diffs[i] < 0 ? -1 : 1;
-        // get p_i-2, p_i-1, p_i, p+i+1 for catmull rom
-        position_points = {cur_pos - calc_max_pos_diffs[i], cur_pos, 
-                            _joints_result(i), _joints_result(i) + calc_max_pos_diffs[i]};
+        // get p_i-2, p_i-1, p_i, p+i+1 for catmull rom spline
+        
         velocity_points_first_spline = {0, 0.3*sign, max_vel, max_vel};
         velocity_points_second_spline = {max_vel, max_vel, 0, 0};
 
-        // compute spline on one joint i 
         // tau of 0.3
         
-        _pos_catmull_coeffs[i] = catmullRomSpline(0.3, position_points);
-
-        // separate splines for working with velocity as function of position
+        // velocity as function of position
         _vel_catmull_coeffs_first_spline[i] = catmullRomSpline(0.3, velocity_points_first_spline);
         _vel_catmull_coeffs_second_spline[i] = catmullRomSpline(0.3, velocity_points_second_spline);
         
     }
-    // _pos_catmull_coeffs has all coefficients for all joints now
     _is_executing_cmd = true;
     for (int i = 0; i < 7; i++)
     {
@@ -268,7 +232,7 @@ std::array<double, 4> PandaPoseController::catmullRomSpline(const double &tau, c
     std::array<std::array<double, 4>, 4> catmullMat = {{{0, 1, 0, 0}, {-tau, 0, tau, 0},
                                                         {2*tau, tau-3, 3 - (2*tau), -tau}, 
                                                         {-tau,2-tau,tau-2,tau}}};
-    // matrix-vector multiplication
+    // calculation of coefficients
     for (int i=0; i<4; i++)
     {
         coeffs[i] = (points[0]*catmullMat[i][0]) + (points[1]*catmullMat[i][1]) 
@@ -293,10 +257,6 @@ double PandaPoseController::calcSplinePolynomial(const std::array<double,4> &coe
 
 void PandaPoseController::constantVelCmd(const double &min_step)
 {
-    // reduce the commands that are sent to the robot in order to limit the rate
-    // in which commands are sent at 1khz.
-
-    // generate waypoints
 
     for (int i = 0; i < 7; i++)
     {
@@ -309,7 +269,7 @@ void PandaPoseController::constantVelCmd(const double &min_step)
         }
         else    
         {
-            // difference is small, near the end send the raw command
+            // difference is small, near the end, send the raw command
             _limited_joint_cmds[i] = _joint_cmds[i];
         }
     }                             
@@ -342,37 +302,13 @@ void PandaPoseController::trapezoidVelCmd(const double &max_step, const double &
         }
         else if (abs(diff) > change_dist)
         {
+            // distance is big, so increase velocity to max, if it's max, 
+            // send max command to controller from prev. pos.
             _iters[i] += v_change;
             _iters[i] = std::min(_iters[i], max_step);
             _limited_joint_cmds[i] = _last_commanded_pos[i] + _iters[i] * (diff > 0 ? 1.0 : -1.0);
         }
     }
-}
-
-void PandaPoseController::catmullRomSplinePosCmd(const double &norm_time)
-{
-    // command only executes when executing command
-    // position is expressed as a function of time 
-    if (norm_time <= 1 && _is_executing_cmd)
-    {
-        for (int i=0; i<7; i++)
-        {
-            double pos = calcSplinePolynomial(_pos_catmull_coeffs[i], norm_time);
-            _limited_joint_cmds[i] = pos;
-
-            // go through each joint and get the desired position from the normalized time
-        }
-        // calculate position value from time (should already be scaled)
-    }
-    else
-    {
-        for (int i=0; i<7; i++)
-        {
-            _limited_joint_cmds[i] = _joint_cmds[i];
-        }
-        _is_executing_cmd = false;
-    }
-    
 }
 
 void PandaPoseController::catmullRomSplineVelCmd(const double &norm_pos, const int &joint_num,
@@ -382,6 +318,7 @@ void PandaPoseController::catmullRomSplineVelCmd(const double &norm_pos, const i
     // velocity is expressed as a function of position (position is normalized)
     if (norm_pos <= 2 && _is_executing_cmd)
     {
+        // valid position and is executing a command
         double vel;
         if (norm_pos < 1)
         {
