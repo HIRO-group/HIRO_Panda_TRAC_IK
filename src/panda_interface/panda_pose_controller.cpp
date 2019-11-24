@@ -105,6 +105,11 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
     {
         _joint_cmds[i] = _joints_result(i);
     }
+    // if goal is reached and robot is originally executing command, we are done
+    if (_isGoalReached() && _is_executing_cmd)
+    {
+        _is_executing_cmd = false;
+    }
 
     double step = 0.0003;
     double max_velo = 0.0003;
@@ -164,12 +169,12 @@ void PandaPoseController::stopping(const ros::Time &time)
 
 void PandaPoseController::targetCartesianPoseCb(const geometry_msgs::Pose &target_pose)
 {
-    // if (_is_executing_cmd) 
-    // {
-    //     ROS_ERROR("Panda Pose Controller: Still executing command!");
-    //     return;
-    //     // panda is still executing command
-    // }
+    if (_is_executing_cmd) 
+    {
+        ROS_ERROR("Panda Pose Controller: Still executing command!");
+        return;
+        // panda is still executing command, cannot publish yet to this topic.
+    }
     _target_pose.orientation.w = target_pose.orientation.w;
     _target_pose.orientation.x = target_pose.orientation.x;
     _target_pose.orientation.y = target_pose.orientation.y;
@@ -345,6 +350,20 @@ void PandaPoseController::catmullRomSplineVelCmd(const double &norm_pos, const i
         _is_executing_cmd = false;
     }
     
+}
+
+bool PandaPoseController::_isGoalReached()
+{
+    // sees if goal is reached given a distance threshold epsilon
+    // l2 norm is used for overall distance
+    double err = 0;
+    for (int i = 0; i < 7; i++)
+    {
+        err += pow(_position_joint_handles[i].getPosition() - _joints_result(i), 2);
+    }
+    err = sqrt(err);
+    return err <= _epsilon;
+
 }
 
 } // namespace hiro_panda

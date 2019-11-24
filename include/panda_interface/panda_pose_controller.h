@@ -50,6 +50,8 @@ private:
 
     bool _is_executing_cmd;
     double _max_abs_vel = 2.1;
+    // threshold for when it is acceptable to say robot has reached goal
+    double _epsilon = 0.0001;
     // user selected trajectory method after inverse kinematics solver completes
     enum class TrajectoryMethod
     {
@@ -74,6 +76,8 @@ private:
     void trapezoidVelCmd(const double &min_step, const double &v_change);
 
     void catmullRomSplineVelCmd(const double &norm_pos, const int &joint_num, const double &interval);
+
+    bool _isGoalReached();
 
 };
 
