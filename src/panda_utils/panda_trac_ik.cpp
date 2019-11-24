@@ -18,7 +18,6 @@ PandaTracIK::PandaTracIK() : _urdf_param_string("/robot_description"), _secs_tim
         _nominal_joint_arr = nullptr;
         return;
     }
-    // use panda_link8 instead?
     _panda_trac_ik_solver = std::make_shared<TRAC_IK::TRAC_IK>(name + "_link0", name + "_hand", _urdf_param_string,
                                                                _secs_timeout, _error, TRAC_IK::Distance);
 
@@ -42,20 +41,20 @@ PandaTracIK::PandaTracIK() : _urdf_param_string("/robot_description"), _secs_tim
         return;
     }
 
-    // manually set joint limits if necessary
+    // set joint limits in the case if urdf is not well defined
 
     for (int i = 0; i<7; i++) 
     {
         ul(i) = _max_joint_positions[i];
         ll(i) = _min_joint_positions[i];
     }
-    // set limits from max joint positions for moves that can be executed
 
     _panda_trac_ik_solver->setKDLLimits(ll, ul);
 
     ROS_INFO("Using %d joints", _chain.getNrOfJoints());
     _nominal_joint_arr = std::make_shared<KDL::JntArray>(_chain.getNrOfJoints());
 
+    // nominal joint positions halfway between upper and lower limits
     for (int j = 0; j < _nominal_joint_arr->data.size(); ++j)
     {
         _nominal_joint_arr->operator()(j) = (ll(j) + ul(j)) / 2.0;
@@ -74,7 +73,6 @@ KDL::JntArray PandaTracIK::perform_ik(const geometry_msgs::Pose &goto_pose)
                           KDL::Vector(goto_pose.position.x,
                                       goto_pose.position.y,
                                       goto_pose.position.z));
-    // printf("%lf \n", pose_frame.M);
 
     // inverse kinematics, _num_steps trials   
     is_valid = false;                  

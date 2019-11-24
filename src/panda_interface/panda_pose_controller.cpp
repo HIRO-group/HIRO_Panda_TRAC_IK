@@ -135,7 +135,6 @@ void PandaPoseController::update(const ros::Time &time, const ros::Duration &per
             {
                 // best and most recommended method for trajectory computation after
                 // inverse kinematics calculations
-                
                 // normalize position, we need to do this separately for every joint
                 double current_pos, p_val;
                 for (int i=0; i<7; i++)
