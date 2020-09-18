@@ -1,14 +1,17 @@
 # Franka Panda TracIK Inverse Kinematics Solver
 
-The Franka Panda Inverse Kinematics Solver Package is a ROS package developed in the HIRO Lab at CU Boulder. It is developed for Cartesian Pose control of the end-effector.
+The Franka Panda Inverse Kinematics Solver Package is a ROS package developed in the HIRO Lab at CU Boulder. It is developed for Cartesian Pose control.
+
 Running this code publishes to a topic with a `geometry_msgs/Pose` message. 
+
+## Details
 
 Trac_IK, an IK solver with a solve rate of 99.88% for the Franka Emika Panda, is used to compute the 7 resulting joint angles for the arm. From there, the user can specify the trajectory method in which the robot moves from one position to another. 
 
 Additionally, there is an accompanying Jupyter Notebook ([here](src/splines.ipynb)) for Catmull-Rom Splines, which is the best (smoothest) trajectory method for the Panda in this repo.
 
 
-**Note**: This package has been tested for the real robot, and doesn't work for the Franka Panda simulation.
+**Note**: This package has been soley tested for the real robot, and doesn't work for the Franka Panda simulation. However, a posible future extension of this work would be for simulation!
 
 ## Installation, Building, and Usage
 
