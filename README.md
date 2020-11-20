@@ -41,15 +41,24 @@ source devel/setup.bash
 
 1. In order to run through the Inverse Kinematics, once the build command succeeds, to see IK in action:
 
-2. Run `source/devel.bash` from the root of your workspace.
+2. 
+```sh
+source devel/setup.bash
+```
 
-3. Run `roslaunch hiro_panda_ik hiro_panda_ik_controller.launch robot_ip:=<robot-url> trajectory_method:=<1,2,3 or 4>`
+3. 
+```sh
+roslaunch hiro_panda_ik hiro_panda_ik_controller.launch robot_ip:=<robot-url> trajectory_method:=<1,2,3 or 4>
+```
 
 4. Note: The trajectory method is the method which is used to move the arm after the inverse kinematics are calculated. The options are:
     * **1**: Constant velocity to each point (default option when `trajectory_method` is not provided)
     * **2**: Increase velocity at a constant rate, then maintain max rate, then decrease at constant rate once near end of trajectory ('trapezoid' method)
     * **3**: Catmull-Rom splines where velocity is calculated as a function of position (smoothest and best method)
 
-5. To publish to the topic: `rostopic pub -1 /hiro_panda/goto_pose geometry_msgs/Pose "{position:{ x: 0.4, y: 0.4, z: 0.5}, orientation:{ x: 0.0, y: 0.0, z: 0.0, w: 1.0}}"`
+5. To publish to the topic: 
+```sh
+rostopic pub -1 /hiro_panda/goto_pose geometry_msgs/Pose "{position:{ x: 0.4, y: 0.4, z: 0.5}, orientation:{ x: 0.0, y: 0.0, z: 0.0, w: 1.0}}"
+```
 
 6. The above example will not changed the orientation of the arm; it will move it to the desired 3-d coordinates. Make sure that the orientation (quarternion) normalizes to 1.
