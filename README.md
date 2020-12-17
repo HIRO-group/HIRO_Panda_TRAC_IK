@@ -1,4 +1,4 @@
-# Franka Panda TracIK Inverse Kinematics Solver
+# Franka Panda TracIK Solver
 
 A Cartesian pose controller ROS package developed in the HIRO Lab at CU Boulder.
 
