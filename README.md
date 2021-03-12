@@ -10,7 +10,7 @@ Trac_IK, an IK solver with a solve rate of 99.88% for the Franka Emika Panda, is
 There's an accompanying Jupyter Notebook ([here](src/splines.ipynb)) for Catmull-Rom Splines, which is the best (smoothest) trajectory method for the Panda in this repo. A short document about these Splines can be found [here](http://www.cs.cmu.edu/~462/www/projects/assn2/assn2/catmullRom.pdf).
 
 
-**Note**: This package has been soley tested for the real robot, and doesn't work for the Franka Panda simulation. However, a posible future extension of this work would be for simulation!
+**Note**: This package has been soley tested for the real robot, and doesn't work for the Franka Panda simulation. However, a possible future extension of this work would be for simulation!
 
 ## Installation, Building, and Usage
 
