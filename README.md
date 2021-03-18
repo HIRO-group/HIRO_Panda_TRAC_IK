@@ -5,12 +5,12 @@ A Cartesian pose controller in the form of a ROS package, developed at the HIRO 
 
 ## Details
 
-Trac_IK, an IK solver with a solve rate of 99.88% for the Franka Emika Panda, is used to compute the 7 resulting joint angles for the arm. From there, the user can specify the trajectory method in which the robot moves from one pose to another.
+This package uses Trac_IK, an IK solver with a solve rate of 99.88% for the Panda. From there, the user can specify the trajectory method in which the robot moves from one pose to another.
 
 There's an accompanying Jupyter Notebook ([here](src/splines.ipynb)) for Catmull-Rom Splines, which is the best (smoothest) trajectory method for the Panda in this repo. A short document about these Splines can be found [here](http://www.cs.cmu.edu/~462/www/projects/assn2/assn2/catmullRom.pdf).
 
 
-**Note**: This package has been soley tested for the real robot, and doesn't work for the Franka Panda simulation. However, a possible future extension of this work would be for simulation!
+**Note**: This package has been soley tested for the real robot, and doesn't work in simulation. However, a possible future extension of this work would be for simulation!
 
 ## Installation, Building, and Usage
 
@@ -39,7 +39,7 @@ source devel/setup.bash
 
 ## User Information
 
-In order to run through the Inverse Kinematics, once the build command succeeds, to see IK in action:
+In order to run through the IK once the build command succeeds, to see it in action:
 
 
 ```sh
