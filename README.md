@@ -39,19 +39,16 @@ source devel/setup.bash
 
 ## User Information
 
-In order to run through the IK once the build command succeeds, to see it in action:
+In order to run through the IK:
 
 
 ```sh
 source devel/setup.bash
-```
 
-
-```sh
 roslaunch hiro_panda_ik hiro_panda_ik_controller.launch robot_ip:=<robot-url> trajectory_method:=<1,2,3 or 4>
 ```
 
-- Note: The trajectory method is the method which is used to move the arm after the inverse kinematics are calculated. The options are:
+- The trajectory method is the method which is used to move the arm after the inverse kinematics are calculated. The options are:
     * **1**: Constant velocity to each point (default option when `trajectory_method` is not provided)
     * **2**: Increase velocity at a constant rate, then maintain max rate, then decrease at constant rate once near end of trajectory ('trapezoid' method)
     * **3**: Catmull-Rom splines where velocity is calculated as a function of position (smoothest and best method)
